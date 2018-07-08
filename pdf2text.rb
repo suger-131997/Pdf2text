@@ -13,30 +13,37 @@ def pdf2text(t, pdffile)
 
     #改行コード
     text = text.gsub(/\r/, "")
+
+    #文字化けへの対応
     #text = text.gsub(/\u00A0/, " ")
     #text = text.gsub(/\u00AD/, "-")
 
     #章分け
     chapters = Hash.new
 
+    #タイトル部分のため
     key = "Title\n"
-    value = ""
 
+    #見出し用ファイルから見出しをロード
     flow = Array.new
     flow << key
     mode_chap = 0
 
     File.open("option/"+dirname + ".txt", "r") do |f|
         f.each_line do |line|
-            l = line.gsub(/\r/, "")
-            if l =~ /^mode_chap=(\d)\n$/ then
+            #p line
+            if line =~ /^mode_chap=(\d).*\n$/ then
                 mode_chap = $1.to_i
             else
-                flow << line.gsub(/\r/, "")
+                flow << line.gsub(/\r/, "").gsub(/\n/, "") + "\n"
             end
         end
     end
+    #p flow
     #p mode_chap
+
+    #章ごとにテキスト分割
+    value = ""                       #本文仮格納用
     chapID = 1
     text.each_line do |line|
         if line =~ /^[1-9]\.\d.*/ then
@@ -45,13 +52,13 @@ def pdf2text(t, pdffile)
         if mode_chap == 0 then  #全文一致
             #p line
             if line == flow[chapID] then
-                p line
+                #p line
                 chapters.store(key, value)
                 key = line
                 value = ""
-                flow[chapID] = key
                 chapID = chapID + 1
             else
+                #ページ番号でなければ本文に追加
                 if line !~ /^\d\n$/ then
                     value += line
                 end
@@ -59,13 +66,13 @@ def pdf2text(t, pdffile)
         elsif mode_chap == 1 then   #先頭一致
             #p line
             if flow[chapID] != nil && line.start_with?(flow[chapID].gsub(/\n/, "") ) then
-                p line
+                #p line
                 chapters.store(key, value)
                 key = line
                 value = ""
-                flow[chapID] = key
                 chapID = chapID + 1
             else
+                #ページ番号でなければ本文に追加
                 if line !~ /^\d\n$/ then
                     value += line
                 end
@@ -73,8 +80,14 @@ def pdf2text(t, pdffile)
         end
     end
 
+    #最後の章追加
     chapters.store(key, value)
 
+    #章題不一致
+    if chapID != flow.length then
+        puts "not found chapter name: #{flow[chapID]}\n"
+        exit(0)
+    end
 
     flow.each do |key|
         if key != "Title\n" then
@@ -139,6 +152,7 @@ def pdf2text(t, pdffile)
         end
     end
 =end
+    puts "Pdf to text success"
 end
 
 def pdf_search()
