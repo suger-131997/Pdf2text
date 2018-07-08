@@ -1,150 +1,154 @@
 # coding: Shift_JIS
 
 def pdf2text(t, pdffile)
-	#ƒtƒHƒ‹ƒ_ì¬
-	dirname = pdffile.gsub(/.pdf/, "")
-	dirname = dirname.gsub(/pdf\//, "")
-	if !Dir.exist?(dirname) then
-		Dir.mkdir(dirname)
-	end
+    #ãƒ•ã‚©ãƒ«ãƒ€ä½œæˆ
+    dirname = pdffile.gsub(/.pdf/, "")
+    dirname = dirname.gsub(/pdf\//, "")
+    if !Dir.exist?(dirname) then
+        Dir.mkdir(dirname)
+    end
 
-	#–{•¶Ši”[
-	text = "" + t
+    #æœ¬æ–‡æ ¼ç´
+    text = "" + t
 
-	#‰üsƒR[ƒh
-	text = text.gsub(/\r/, "")
+    #æ”¹è¡Œã‚³ãƒ¼ãƒ‰
+    text = text.gsub(/\r/, "")
+    #text = text.gsub(/\u00A0/, " ")
+    #text = text.gsub(/\u00AD/, "-")
 
-	#Í•ª‚¯
-	chapters = Hash.new
-	
-	key = "Title\n"
-	value = ""
+    #ç« åˆ†ã‘
+    chapters = Hash.new
 
-	flow = Array.new
-	flow << key
-	mode_chap = 0
+    key = "Title\n"
+    value = ""
 
-	File.open("option/"+dirname + ".txt", "r") do |f|
-		f.each_line do |line|
-			l = line.gsub(/\r/, "")
-			if l =~ /^mode_chap=(\d)\n$/ then
-				mode_chap = $1.to_i
-			else
-				flow << line.gsub(/\r/, "")
-			end
-		end
-	end
-	p mode_chap
-	chapID = 1
-	text.each_line do |line|
-		
-		#p line
-		
-		if mode_chap == 0 then	#‘S•¶ˆê’v
-			if line == flow[chapID] then
-				p line
-  				chapters.store(key, value)
-  				key = line
-				value = ""
-				flow[chapID] = key
-				chapID = chapID + 1
-			else
-  				if line !~ /^\d\n$/ then
-					value += line
-				end
-			end
-		elsif mode_chap == 1 then	#æ“ªˆê’v
-			if flow[chapID] != nil && line.start_with?(flow[chapID].gsub(/\n/, "") ) then
-				p line
-  				chapters.store(key, value)
-  				key = line
-				value = ""
-				flow[chapID] = key
-				chapID = chapID + 1
-			else
-  				if line !~ /^\d\n$/ then
-					value += line
-				end
-			end
-		end
-	end
+    flow = Array.new
+    flow << key
+    mode_chap = 0
 
-	chapters.store(key, value)
-	
+    File.open("option/"+dirname + ".txt", "r") do |f|
+        f.each_line do |line|
+            l = line.gsub(/\r/, "")
+            if l =~ /^mode_chap=(\d)\n$/ then
+                mode_chap = $1.to_i
+            else
+                flow << line.gsub(/\r/, "")
+            end
+        end
+    end
+    #p mode_chap
+    chapID = 1
+    text.each_line do |line|
+        if line =~ /^[1-9]\.\d.*/ then
+            #p line
+        end
+        if mode_chap == 0 then  #å…¨æ–‡ä¸€è‡´
+            #p line
+            if line == flow[chapID] then
+                p line
+                chapters.store(key, value)
+                key = line
+                value = ""
+                flow[chapID] = key
+                chapID = chapID + 1
+            else
+                if line !~ /^\d\n$/ then
+                    value += line
+                end
+            end
+        elsif mode_chap == 1 then   #å…ˆé ­ä¸€è‡´
+            #p line
+            if flow[chapID] != nil && line.start_with?(flow[chapID].gsub(/\n/, "") ) then
+                p line
+                chapters.store(key, value)
+                key = line
+                value = ""
+                flow[chapID] = key
+                chapID = chapID + 1
+            else
+                if line !~ /^\d\n$/ then
+                    value += line
+                end
+            end
+        end
+    end
 
-	flow.each do |key| 
-		if key != "Title\n" then
-			#‰üs‚Ì’PŒê‚Ì•ªŠ„œ‹
-			chapters.store(key, chapters[key].gsub(/([a-zA-Z])-\n/){ $1 })
-			#ƒsƒŠƒIƒh’¼ŒãˆÈŠO‚Ì‰üs‚ğÁ‚·
-			chapters.store(key, chapters[key].gsub(/([^\.])\n/){ $1 + " " })
-			#ƒsƒŠƒIƒh’¼Œã‚É‰üs
-			chapters.store(key, chapters[key].gsub(/\.\s+([A-Z])/){ ".\n" + $1 })
-			#e.g.\n‚Ö‚Ì‘Î‰
-			chapters.store(key, chapters[key].gsub(/e\.g\.\n/){ "e.g." })
-		end
-	end
+    chapters.store(key, value)
 
 
-	#“¯–¼ƒtƒ@ƒCƒ‹ì¬
-	filename = dirname +"/" + dirname + ".txt"
+    flow.each do |key|
+        if key != "Title\n" then
+            #æ”¹è¡Œã®å˜èªã®åˆ†å‰²é™¤å»
+            chapters.store(key, chapters[key].gsub(/([a-zA-Z])-\n/){ $1 })
+            #ãƒ”ãƒªã‚ªãƒ‰ç›´å¾Œä»¥å¤–ã®æ”¹è¡Œã‚’æ¶ˆã™
+            chapters.store(key, chapters[key].gsub(/([^\.])\n/){ $1 + " " })
+            #ãƒ”ãƒªã‚ªãƒ‰ç›´å¾Œã«æ”¹è¡Œ
+            chapters.store(key, chapters[key].gsub(/\.\s([A-Z])/){ ".\n" + $1 })
+            #e.g.\nã¸ã®å¯¾å¿œ
+            chapters.store(key, chapters[key].gsub(/e\.g\.\n/){ "e.g." })
+        end
+    end
 
-	File.open(filename, "w") do |f|
-		flow.each do |key| 
-			f.puts key
-			f.puts chapters[key]
-			f.puts ""
-		end
-	end
 
-	#1•¶‚²‚Æ‚É‰üs
-	flow.each do |key| 
-		if key != "Title\n" then
-			#()‚ğœ‹
-			chapters.store(key, chapters[key].gsub(/\.\n/){ ".\n\n" })
-		end
-	end
+    #åŒåãƒ•ã‚¡ã‚¤ãƒ«ä½œæˆ
+    filename = dirname +"/" + dirname + ".txt"
 
-	#ƒtƒ@ƒCƒ‹–¼•ÏX
-	filename = dirname +"/"  + dirname +  "_dif.txt"
+    File.open(filename, "w") do |f|
+        flow.each do |key|
+            f.puts key
+            f.puts chapters[key]
+            f.puts ""
+        end
+    end
 
-	File.open(filename, "w") do |f|
-		flow.each do |key| 
-			f.puts key
-			f.puts chapters[key]
-			f.puts ""
-		end
-	end
-=begin 
-	#()‚ğœ‹
-	flow.each do |key| 
-		if key != "Title\n" then
-			#()‚ğœ‹
-			chapters.store(key, chapters[key].gsub(/\([^)]*\)/){ "" })
-		end
-	end
+    #1æ–‡ã”ã¨ã«æ”¹è¡Œ
+    flow.each do |key|
+        if key != "Title\n" then
+            #()ã‚’é™¤å»
+            chapters.store(key, chapters[key].gsub(/\.\n/){ ".\n\n" })
+        end
+    end
 
-	#ƒtƒ@ƒCƒ‹–¼•ÏX
-	filename = dirname +"/"  + dirname +  "_no_()_dif.txt"
+    #ãƒ•ã‚¡ã‚¤ãƒ«åå¤‰æ›´
+    filename = dirname +"/"  + dirname +  "_dif.txt"
 
-	File.open(filename, "w") do |f|
-		flow.each do |key| 
-			f.puts key
-			f.puts chapters[key]
-			f.puts ""
-		end
-	end
+    File.open(filename, "w") do |f|
+        flow.each do |key|
+            f.puts key
+            f.puts chapters[key]
+            f.puts ""
+        end
+    end
+=begin
+    #()ã‚’é™¤å»
+    flow.each do |key|
+        if key != "Title\n" then
+            #()ã‚’é™¤å»
+            chapters.store(key, chapters[key].gsub(/\([^)]*\)/){ "" })
+        end
+    end
+
+    #ãƒ•ã‚¡ã‚¤ãƒ«åå¤‰æ›´
+    filename = dirname +"/"  + dirname +  "_no_()_dif.txt"
+
+    File.open(filename, "w") do |f|
+        flow.each do |key|
+            f.puts key
+            f.puts chapters[key]
+            f.puts ""
+        end
+    end
 =end
 end
 
 def pdf_search()
-	pdfs = []
-	Dir.open("pdf") do |dir|
-  		dir.each do |f|
-			if f =~ /.*.pdf$/ then
-				pdfs << f
-			end
-		end
-	end
-	return pdfs
+    pdfs = []
+    Dir.open("pdf") do |dir|
+        dir.each do |f|
+            if f =~ /.*.pdf$/ then
+                pdfs << f
+            end
+        end
+    end
+    return pdfs
 end
